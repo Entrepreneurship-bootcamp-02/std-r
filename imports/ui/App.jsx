@@ -14,9 +14,7 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      hideCompleted: false,
-    };
+    this.state = {     hideCompleted: false,    };
   }
 
   // 클릭할 때마다 실행 = 상태값을 반대로
@@ -32,15 +30,6 @@ class App extends Component {
     // ref="textInput" 를 찾아서 value 를 text 에 대입
     const text = ReactDOM.findDOMNode(this.refs.textInput).value.trim();
 
-    // 작동 않함
-    // Tasks.insert({
-    //   text,
-    //   createdAt: new Date(), // current time
-    //   owner: Meteor.userId(),          //  id of logged in user <==
-    //   username: Meteor.user().username //  username of logged in user <==
-    // });
-
-    // 여기 추가 서버 Method 호출 <==
     Meteor.call('tasks.insert', text);
 
     // DB instert 후 폼에 있는 값을 ''로 지위줌
@@ -54,16 +43,33 @@ class App extends Component {
     if (this.state.hideCompleted) {
       filteredTasks = filteredTasks.filter(task => !task.checked);
     }
-    return filteredTasks.map((task) => (
-      <Task key={task._id} task={task} />
-    ));
+    // 삭제
+    // return filteredTasks.map((task) => (
+    //   <Task key={task._id} task={task} />
+    // ));
+
+    // 추가
+    return filteredTasks.map((task) => {
+    const currentUserId = this.props.currentUser && this.props.currentUser._id;
+    const showPrivateButton = task.owner === currentUserId;
+
+    return (
+      <Task
+        key={task._id}
+        task={task}
+        showPrivateButton={showPrivateButton}
+      />
+      );
+    });
+    // 여기까지
+
   }
 
   render() {
     return (
       <div className="container">
         <header>
-          <h1>Todo List:8.User Acc. ({this.props.incompleteCount})</h1>
+          <h1>Todo List:A.Pub/Sub ({this.props.incompleteCount})</h1>
 
             <label className="hide-completed">
                 <input
@@ -104,6 +110,11 @@ App.propTypes = {
 };
 
 export default createContainer(() => {
+
+  // autopublish 패키지 삭제이후 추가
+   Meteor.subscribe('tasks');
+   //  여기까지
+
   return {
       tasks: Tasks.find({}, { sort: { createdAt: -1 } }).fetch(),
       incompleteCount: Tasks.find({ checked: { $ne: true } }).count(),
